@@ -1,0 +1,55 @@
+version: 2
+
+models:
+  - name: stg_ecommerce__orders
+    description: "table of 1 row per order"
+    columns:
+      - name: order_id
+        description: "the primary key"
+        tests:
+          - not_null
+          - unique
+
+      - name: user_id
+        description: ""
+
+      - name: status
+        description: ""
+        tests:
+          - accepted_values:
+              name: unexpected_order_status # We can name our tests to make it easier to give more meaningful errors
+              values:
+                - Processing  # Sind strings, dbt ergaenzt die Anfuehrungstriche implizit
+                - Cancelled
+                - Shipped
+                - Complete
+                - Returned
+#                - Returned # EfJ, 01.08.2023: Auskommentiert um den Test zu testen
+
+      - name: created_at
+        description: "when the order was created"
+        tests:
+          - not_null
+
+      - name: returned_at
+        description: "when the order was returned"
+        tests:
+          - not_null:
+              where: "status = 'Returned'"
+
+      - name: shipped_at
+        description: "when the order was shipped"
+        tests:
+          - not_null:
+              where: "delivered_at is not null or status = 'Shipped'"
+
+      - name: delivered_at
+        description: "when the order was delivered"
+        tests:
+          - not_null:
+              where: "returned_at is not null or status = 'Complete'"
+
+      - name: num_items_ordered
+        description: "number of items in the order"
+        tests:
+          - not_null
